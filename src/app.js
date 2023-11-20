@@ -1,32 +1,27 @@
-// app.js
-
 const express = require('express');
 const bodyParser = require('body-parser');
-const readline = require('readline');
-const listViewRouter = require('./src/list-view-router');
+const listViewRouter = require('./list-view-router');
+const listEditRouter = require('./list-edit-router');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
 
-// Lista de tareas (debe estar vacía al inicio)
-let tasks = [];
+// Lista de tareas (debería obtenerse desde una base de datos)
+global.tasks = [];
 
-// Middleware para convertir el cuerpo de la solicitud a JSON
 app.use(bodyParser.json());
 
-// Middleware para asignar req.tasks antes de llegar a listViewRouter
-app.use((req, res, next) => {
-    req.tasks = tasks;
-    next();
-});
+// Pasa la variable tasks como middleware a los routers
+app.use('/list-view', (req, res, next) => {
+  req.tasks = tasks;
+  next();
+}, listViewRouter);
 
-// Implementa ambos routers en el servidor principal
-app.use('/list-view', listViewRouter);
+app.use('/list-edit', (req, res, next) => {
+  req.tasks = tasks;
+  next();
+}, listEditRouter);
 
 app.listen(PORT, () => {
-    console.log(`Servidor en ejecución en http://localhost:${PORT}`);
+  console.log(`Servidor en ejecución en http://localhost:${PORT}`);
 });
