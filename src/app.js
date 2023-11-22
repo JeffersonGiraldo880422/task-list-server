@@ -1,28 +1,27 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const bodyParser = require('body-parser');
 const port = 3000;
 
 const app = express();
 const listEditRouter = require("./list-edit-router");
 const listViewRouter = require("./list-view-router");
-const TaskList = [
-    {
-        "id":"123456",
-        "isCompleted":false,
-        "description":"Walk the dog",
-    },
-];
+
+app.use(bodyParser.json());
+
+global.tasks = global.tasks || [];
+
 const usersDB = [
     {
-        username: "testuser",
+        username: "user",
         password: "user123",
-        rol: "user"
+        roll: "user"
     },
     {
-        username: "testadmin",
+        username: "admin",
         password: "admin123",
-        rol: "admin"
+        roll: "admin"
     }
 ]
 
@@ -46,11 +45,11 @@ const authVerification = (req, res, next) => {
 };
 
 app.get("/", (req, res) => {
-    res.send(JSON.stringify(TaskList));
+    res.send(JSON.stringify(tasks));
 })
 
-app.get("/secretpage", authVerification, (req, res) => {
-    res.status(200).send("Esto es privado jiji");
+app.get("/xfiles", authVerification, (req, res) => {
+    res.status(200).send("Esta parte es exclusiva y privada");
 });
 
 app.post("/login", (req, res) => {
@@ -69,5 +68,17 @@ app.post("/login", (req, res) => {
 });
 
 app.listen(port, (error) => {
-    error ? console.log(error) : console.log("server listening...");
+    error ? console.log(error) : console.log("The server is running now");
 })
+
+// Pasa la variable tasks como middleware a los routers
+
+app.use('/edit', (req, res, next) => {
+  req.tasks = tasks;
+  next();
+}, listEditRouter); 
+
+app.use('/view', (req, res, next) => {
+  req.tasks = tasks;
+  next();
+}, listViewRouter);

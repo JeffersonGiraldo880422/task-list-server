@@ -1,36 +1,59 @@
 const express = require("express");
-
-const router = express.Router();
+const listEditRouter = express.Router();
 
 const errorValidation = (req, res, next) => {
   const method = req.method;
   const body = req.body;
+  const tasks = req.tasks || []; // Aseguramos que tasks esté definido
 
-  if (method === "POST"){
-    !Object.keys(req.body).length ? res.status(400).send("No se recibieron datos") : body.description ? next() : res.status(400).send("Los datos están incompletos");
+  if (method === "POST") {
+    !Object.keys(req.body).length ? 
+      res.status(400).send("No se han recibido datos") : 
+      body && body.description ? 
+        next() : 
+        res.status(400).send("Faltan datos, por favor completar");
   } else if (method === "PUT") {
-    body ? body.description ? next() : res.status(400).send("Los datos están incompletos") : res.status(400).send("No se recibieron datos");
+    body ? 
+      body.description ? 
+        next() : 
+        res.status(400).send("Faltan datos, por favor completar") : 
+      res.status(400).send("No se han recibido datos");
   }
 };
 
-router.use(express.json());
+listEditRouter.use(express.json());
 
-router.get("/", (req, res) => {
-  res.send("hola")
+listEditRouter.get("/", (req, res) => {
+  res.send("El router de edición está funcionando");
 });
 
-router.put("/:id", errorValidation, (req, res) => {
+listEditRouter.post("/create", errorValidation, (req, res) => {
+  const newTask = req.body;
+  global.tasks.push(newTask); // Agrega la nueva tarea a la lista global
+  res.json(global.tasks);
+});
+
+listEditRouter.put('/update/:taskId', errorValidation, (req, res) => {
+  const taskId = req.params.taskId;
+  const updatedTask = req.body;
+
+  // Encuentra la tarea con el ID correspondiente
+  const taskToUpdate = req.tasks.find(task => task.id === parseInt(taskId));
+
+  if (!taskToUpdate) {
+    return res.status(404).send("Tarea no encontrada");
+  }
+
+  // Actualiza la información de la tarea
+  Object.assign(taskToUpdate, updatedTask);
+
+  res.json(req.tasks);
+});
+
+
+listEditRouter.delete("/delete/:id", (req, res) => {
   const id = req.params.id;
-  res.send(`Se actualizará la tarea con ID No. ${id}`);
+  res.send(`Se procede a eliminar la tarea con ID No. ${id}`);
 });
 
-router.delete("/:id", (req, res) => {
-  const id = req.params.id;
-  res.send(`Se eliminará la tarea con ID No. ${id}`);
-});
-
-router.post("/", errorValidation, (req, res) => {
-  res.send("se recibe en el body la nueva tarea");
-});
-
-module.exports = router;
+module.exports = listEditRouter;

@@ -1,17 +1,17 @@
 const express = require("express");
 
-const router = express.Router();
+const listViewRouter = express.Router();
 
-router.get("/completed", (req, res) => {
-    res.send("lista de tareas completas");
+listViewRouter.get("/completed", (req, res) => {
+    res.send("Lista de tareas completadas");
 });
 
-router.get("/ongoing", (req, res) => {
-    res.send("lista de tareas incompletas");
+listViewRouter.get("/incomplete", (req, res) => {
+    res.send("lista de tareas no completadas");
 });
 
-router.use((req, res) => {
-    res.status(404).send("página no encontrada");
+listViewRouter.use((req, res) => {
+    res.status(404).send("No se ha encontrado la página");
 });
 
-module.exports = router;
+module.exports = listViewRouter;
