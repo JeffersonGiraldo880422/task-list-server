@@ -1,27 +1,32 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const listViewRouter = require('./list-view-router');
-const listEditRouter = require('./list-edit-router');
+const express = require("express");
+const port = 3000;
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const listEditRouter = require("./list-edit-router");
+const listViewRouter = require("./list-view-router");
+const TaskList = [
+    {
+        "id":"123456",
+        "isCompleted":false,
+        "description":"Walk the dog",
+    },
+]
 
-// Lista de tareas (debería obtenerse desde una base de datos)
-global.tasks = [];
+app.use("/edit", listEditRouter);
+app.use("/view", listViewRouter);
+app.use((req, res, next) => {
+    const method = req.method;
+    const methods = ["POST", "PUT", "DELETE", "GET"]
+    
+    methods.includes(method) ? next() : res.status(400).send("Método inválido");
+})
 
-app.use(bodyParser.json());
 
-// Pasa la variable tasks como middleware a los routers
-app.use('/list-view', (req, res, next) => {
-  req.tasks = tasks;
-  next();
-}, listViewRouter);
 
-app.use('/list-edit', (req, res, next) => {
-  req.tasks = tasks;
-  next();
-}, listEditRouter);
+app.get("/", (req, res) => {
+    res.send(JSON.stringify(TaskList));
+})
 
-app.listen(PORT, () => {
-  console.log(`Servidor en ejecución en http://localhost:${PORT}`);
-});
+app.listen(port, (error) => {
+    error ? console.log(error) : console.log("server listening...");
+})

@@ -1,18 +1,17 @@
-// list-view-router.js
-const express = require('express');
-const listViewRouter = express.Router();
+const express = require("express");
 
-// Hacer una solicitud GET a una ruta específica para listar las tareas completas
-listViewRouter.get('/completed', (req, res) => {
-  const completedTasks = req.tasks.filter(tasks => tasks.completed);
-  res.json(completedTasks);
+const router = express.Router();
+
+router.get("/completed", (req, res) => {
+    res.send("lista de tareas completas");
 });
 
-// Hacer una solicitud GET a una ruta específica para listar las tareas incompletas
-listViewRouter.get('/incomplete', (req, res) => {
-  const incompleteTasks = req.tasks.filter(tasks => !tasks.completed);
-  res.json(incompleteTasks);
+router.get("/ongoing", (req, res) => {
+    res.send("lista de tareas incompletas");
 });
 
-module.exports = listViewRouter;
+router.use((req, res) => {
+    res.status(404).send("página no encontrada");
+});
 
+module.exports = router;

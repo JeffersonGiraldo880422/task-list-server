@@ -2,28 +2,39 @@
 const express = require('express');
 const listEditRouter = express.Router();
 
-// Hacer una solicitud POST a una ruta específica para crear una tarea
-listEditRouter.post('/create', (req, res) => {
-  const newTask = req.body;
-  req.tasks.push(newTask); // Agrega la nueva tarea a la lista global
-  res.json(req.tasks);
+const express = require("express");
+
+const router = express.Router();
+
+const errorValidation = (req, res, next) => {
+  const method = req.method;
+  const body = req.body;
+
+  if (method === "POST"){
+    !Object.keys(req.body).length ? res.status(400).send("No se recibieron datos") : body.description ? next() : res.status(400).send("Los datos están incompletos");
+  } else if (method === "PUT") {
+    body ? body.description ? next() : res.status(400).send("Los datos están incompletos") : res.status(400).send("No se recibieron datos");
+  }
+};
+
+router.use(express.json());
+
+router.get("/", (req, res) => {
+  res.send("hola")
 });
 
-// Hacer una solicitud DELETE a una ruta específica para eliminar una tarea
-listEditRouter.delete('/delete/:taskId', (req, res) => {
-  const taskId = req.params.taskId;
-  req.tasks = req.tasks.filter(task => task.id !== parseInt(taskId)); // Elimina la tarea con el ID proporcionado
-  res.json(req.tasks);
-  tasks=req.tasks;
+router.put("/:id", errorValidation, (req, res) => {
+  const id = req.params.id;
+  res.send(`Se actualizará la tarea con ID No. ${id}`);
 });
 
-// Hacer una solicitud UPDATE a una ruta específica para actualizar una tarea
-listEditRouter.put('/update/:taskId', (req, res) => {
-  const taskId = req.params.taskId;
-  const updatedTask = req.body;
-  req.tasks = req.tasks.map(task => (task.id === parseInt(taskId) ? updatedTask : task)); // Actualiza la tarea con el ID proporcionado
-  res.json(req.tasks);
-  tasks=req.tasks;
+router.delete("/:id", (req, res) => {
+  const id = req.params.id;
+  res.send(`Se eliminará la tarea con ID No. ${id}`);
 });
 
-module.exports = listEditRouter;
+router.post("/", errorValidation, (req, res) => {
+  res.send("se recibe en el body la nueva tarea");
+});
+
+module.exports = router;
