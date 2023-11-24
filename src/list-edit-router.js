@@ -4,7 +4,6 @@ const listEditRouter = express.Router();
 const errorValidation = (req, res, next) => {
   const method = req.method;
   const body = req.body;
-  const tasks = req.tasks || []; // Aseguramos que tasks esté definido
 
   if (method === "POST") {
     !Object.keys(req.body).length ? 
@@ -38,7 +37,7 @@ listEditRouter.put('/update/:taskId', errorValidation, (req, res) => {
   const updatedTask = req.body;
 
   // Encuentra la tarea con el ID correspondiente
-  const taskToUpdate = req.tasks.find(task => task.id === parseInt(taskId));
+  const taskToUpdate = global.tasks.find(task => task.id === parseInt(taskId));
 
   if (!taskToUpdate) {
     return res.status(404).send("Tarea no encontrada");
@@ -47,13 +46,24 @@ listEditRouter.put('/update/:taskId', errorValidation, (req, res) => {
   // Actualiza la información de la tarea
   Object.assign(taskToUpdate, updatedTask);
 
-  res.json(req.tasks);
+  res.json(global.tasks);
 });
 
 
 listEditRouter.delete("/delete/:id", (req, res) => {
   const id = req.params.id;
-  res.send(`Se procede a eliminar la tarea con ID No. ${id}`);
+  
+  // Encuentra el índice de la tarea con el ID correspondiente
+  const taskIndex = global.tasks.findIndex(task => task.id === parseInt(id));
+
+  if (taskIndex === -1) {
+    return res.status(404).send("Tarea no encontrada");
+  }
+
+  // Elimina la tarea específica del array global.tasks
+  global.tasks.splice(taskIndex, 1);
+
+  res.json(global.tasks);
 });
 
 module.exports = listEditRouter;
