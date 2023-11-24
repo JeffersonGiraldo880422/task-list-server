@@ -1,16 +1,11 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const bodyParser = require('body-parser');
-const port = 3000;
 
 const app = express();
-const listEditRouter = require("./list-edit-router");
-const listViewRouter = require("./list-view-router");
+const port = 3000;
 
-app.use(bodyParser.json());
-
-global.tasks = global.tasks || [];
+app.use(express.json());
 
 const usersDB = [
     {
@@ -25,32 +20,21 @@ const usersDB = [
     }
 ]
 
-app.use("/edit", listEditRouter);
-app.use("/view", listViewRouter);
-app.use(express.json());
-app.use((req, res, next) => {
-    const method = req.method;
-    const methods = ["POST", "PUT", "DELETE", "GET"];
-    
-    methods.includes(method) ? next() : res.status(400).send("Método inválido");
-})
-
+// Middleware para verificar la autenticación
 const authVerification = (req, res, next) => {
-    acessToken = req.headers["authorization"];
-    if (!acessToken) res.status(403).send("No te has autenticado");
+  const accessToken = req.headers["authorization"];
 
-    jwt.verify(acessToken, process.env.SECRET_KEY, (err, user) => {
-        err ? res.status(403).send("Acceso denegado") : next();
-    });
+  if (!accessToken) {
+    return res.status(403).json({ error: "No te has autenticado" }); // 403 Forbidden
+  }
+
+  jwt.verify(accessToken, process.env.SECRET_KEY, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Acceso denegado" }); // 403 Forbidden
+    }
+    next();
+  });
 };
-
-app.get("/", (req, res) => {
-    res.send(JSON.stringify(tasks));
-})
-
-app.get("/xfiles", authVerification, (req, res) => {
-    res.status(200).send("Esta parte es exclusiva y privada");
-});
 
 app.post("/login", (req, res) => {
     const {username, password} = req.body;
@@ -67,18 +51,87 @@ app.post("/login", (req, res) => {
 
 });
 
-app.listen(port, (error) => {
-    error ? console.log(error) : console.log("The server is running now");
-})
+// Lista global de tareas
+global.tasks = [];
 
-// Pasa la variable tasks como middleware a los routers
+// Endpoint para crear una nueva tarea
+app.post("/tasks", authVerification, (req, res) => {
+    const newTask = req.body;
+    
+    // Generar un nuevo ID para la tarea
+    newTask.id = global.tasks.length + 1;
 
-app.use('/edit', (req, res, next) => {
-  req.tasks = tasks;
-  next();
-}, listEditRouter); 
+    // Asegurarnos de que todas las tareas tengan la propiedad isCompleted
+    if (newTask.isCompleted === undefined) {
+        newTask.isCompleted = false;
+    }
 
-app.use('/view', (req, res, next) => {
-  req.tasks = tasks;
-  next();
-}, listViewRouter);
+    // Agregar la nueva tarea a la lista global
+    global.tasks.push(newTask);
+    
+    res.status(201).json(newTask); // 201 Created
+});
+
+// Endpoint para obtener todas las tareas
+app.get("/tasks", authVerification, (req, res) => {
+  res.json(global.tasks);
+});
+
+// Endpoint para obtener una tarea por su ID
+app.get("/tasks/:id", authVerification, (req, res) => {
+  const taskId = req.params.id;
+  const task = global.tasks.find(task => task.id === parseInt(taskId));
+
+  if (!task) {
+    return res.status(404).json({ error: "Tarea no encontrada" }); // 404 Not Found
+  }
+
+  res.json(task);
+});
+
+// Endpoint para actualizar una tarea por su ID
+app.put("/tasks/:id", authVerification, (req, res) => {
+  const taskId = req.params.id;
+  const updatedTask = req.body;
+
+  const taskToUpdate = global.tasks.find(task => task.id === parseInt(taskId));
+
+  if (!taskToUpdate) {
+    return res.status(404).json({ error: "Tarea no encontrada" }); // 404 Not Found
+  }
+
+  Object.assign(taskToUpdate, updatedTask);
+
+  res.json(taskToUpdate);
+});
+
+// Endpoint para eliminar una tarea por su ID
+app.delete("/tasks/:id", authVerification, (req, res) => {
+  const taskId = req.params.id;
+  const taskIndex = global.tasks.findIndex(task => task.id === parseInt(taskId));
+
+  if (taskIndex === -1) {
+    return res.status(404).json({ error: "Tarea no encontrada" }); // 404 Not Found
+  }
+
+  const deletedTask = global.tasks.splice(taskIndex, 1);
+
+  res.json(deletedTask);
+});
+
+// Endpoint para obtener tareas completadas
+app.get("/tasks/t/completed", authVerification, (req, res) => {
+    const completedTasks = global.tasks.filter(tasks => tasks.isCompleted);
+    res.json(completedTasks);
+
+});
+
+// Endpoint para obtener tareas incompletas
+app.get("/tasks/t/incomplete", authVerification, (req, res) => {
+  const incompleteTasks = global.tasks.filter(tasks => !tasks.isCompleted);
+  res.json(incompleteTasks);
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
